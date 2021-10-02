@@ -1,0 +1,14 @@
+refs:
+mangle:
+  - file: "hello.py"
+    snippet_refs: ["2"]
+  - file: "test.py"
+    snippet_refs: ["1"]
+tangle:
+  "addition":
+    text: |
+      def addition(x, y):
+        return x + y
+
+
+

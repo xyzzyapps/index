@@ -1,0 +1,14 @@
+nodes:
+ - type: "md"
+   section: "1"
+   text: |
+
+    Only this section is transcluded.
+
+ - type: "md"
+   section: "2"
+   text: |
+
+    This section is ignored.
+
+

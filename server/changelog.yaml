@@ -1,0 +1,36 @@
+nodes:
+ - type: "md"
+   text: |
+    ## Changelog
+
+    Day 1-2
+
+    Research on lua, love2d, raylib, xanadu, chroot sandboxing.
+    Messing with seeding.
+
+    Initially the goal was to use Lua and Love2D but as love2d doesn't support luarocks.
+    Raylib doesn't have lua bindings on mac.
+
+    Day 3
+
+    Prototype in PyQt
+    Rendering bunch of nodes from YAML in a single column.
+    Basic transclusion support is added.
+
+    Dealt with annoying scrolling bug.
+
+    Day 4
+
+    Transclusion
+    Prepared demo and examples
+
+    Day 5
+
+    Docs
+    Literate programming support
+    Tasklist
+    Open links in external browser
+
+    Experimenting with Qt styles and getting the full height of the webview did not work out well.
+
+

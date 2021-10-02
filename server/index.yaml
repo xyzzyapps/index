@@ -1,0 +1,15 @@
+root: intro.yaml
+author: xyzzy
+host: 127.0.0.1:8893
+magnet:
+public_key: <key>
+form_email: <insert-email>
+rss:
+homepage:
+about:
+last_updated:
+license:
+title:
+tags:
+icon:
+language:

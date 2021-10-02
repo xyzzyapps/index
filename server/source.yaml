@@ -1,0 +1,25 @@
+mangle:
+  - file: "hello.py"
+    snippet_refs: ["2"]
+    post: |
+      import os
+      os.system("safe-rm hello.py")
+  - file: "test.py"
+    snippet_refs: ["1"]
+tangle:
+  "Intro":
+    doc: |
+      Welcome!
+  "1":
+    text: |
+      print("world")
+  "2":
+    text: |
+      @[ _["addition"]["text"] @]
+      print("hello")
+      @[ _["1"]["text"] @]
+      print(addition(1,2))
+  "addition":
+    from:
+      file: utils.yaml
+

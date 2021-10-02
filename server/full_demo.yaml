@@ -1,0 +1,44 @@
+nodes:
+ - type: "literate"
+   file: "source.yaml"
+ - type: "html"
+   url: "p5.html"
+ - type: "snippet"
+   lang: "python"
+   text: |
+     print("hello")
+ - type: "code"
+   text: |
+     global exec_ret
+     def hw():
+        return "hello" + "world"
+     print(nodes)
+     exec_ret = hw()
+ - type: "image"
+   file: "x.png"
+ - type: "youtube"
+   id: "aqz-KE-bpKQ"
+ - type: "md"
+   text: |
+     # Welcome 
+     #
+     *foo*
+     This is a project built during the reinvention jam of handmade network!
+
+     External link [gooogle](https://ddg.gg)
+ - type: "url"
+   url: "https://www.youtube.com"
+ - type: "button"
+   button:
+     label: "buy"
+     id: monm@$
+ - type: "text"
+   text: |
+    Test
+ - type: "transclusion"
+   transclusion:
+        comment: "My comment"
+        file: test.yaml
+        section: "1"
+        authorisation: monm@$
+

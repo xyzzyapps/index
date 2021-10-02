@@ -1,0 +1,32 @@
+nodes:
+ - type: "md"
+   text: |
+     # Future Plans
+
+     1. Kivy / Opengl / raylib
+     3. RSS
+     4. Sandbox Lua, Python with chroot or PyPy
+     5. Sitemap / Microdata
+     6. Packaging, App Icon and Metadata
+     7. Search
+     8. Bookmarks and Homescreen
+     9. Ethereum / Stripe
+     10. sphinx support
+     11. Scripting
+     12. Magnet (Linked torrents with signatures)
+
+ - type: "md"
+   section: "main"
+   height: 300
+   text: |
+     # Known Bugs
+
+     1. Height calculation
+     2. Margins have some extra space
+     3. YAML errors crash
+
+     # Next Todo
+
+     - [ ] Plugin System for Bookmarks and Backups (see Discord)
+
+

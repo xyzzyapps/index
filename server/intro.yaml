@@ -1,0 +1,43 @@
+nodes:
+ - type: "md"
+   height: 549
+   text: |
+     # Welcome to Index!
+
+     This is a project built during the reinvention jam of handmade network!
+
+     Index is a browser with some twists. Some of the things considered for reinventing
+
+     1. DNS with magnet links. *partially done*
+     2. Markdown instead of html. *done*
+     3. Support images, svg, video, image maps. *done*
+     4. Form submit will send an (encrypted ) email with personal details. *partially done*
+     5. Integrated payment. *not done*
+     6. Mobile app. *not done*
+     7. Xanadu style transclusions with  authorisation support. *authorisation and connection visualisations are not implemented*
+     8. Simpler CSS / DOM with lua or yaml. *done*
+
+     Currently the project uses Python3 and PyQt.
+
+
+ - type: "link"
+   link:
+        file: full_demo.yaml
+
+ - type: "link"
+   link:
+        file: setup.yaml
+
+ - type: "transclusion"
+   transclusion:
+        comment: ""
+        file: todo.yaml
+        section: "main"
+        authorisation: monm@$
+
+ - type: "link"
+   link:
+        file: changelog.yaml
+
+
+
