@@ -3,6 +3,7 @@ import re
 import sys
 import os
 import requests
+from download_source import download
 
 from PyQt5.QtWidgets import*
 from PyQt5.QtCore import*
@@ -27,7 +28,6 @@ class CustomWebEnginePage(QWebEnginePage):
         def contentsSizeChanged(size):
             nonlocal webview
             nonlocal box
-            print(size.height())
 
             # def cb(v):
             #   print("#1" + str(v))
@@ -52,8 +52,19 @@ index_metadata = None
 user_metadata = None
 exec_ret = None
 g = None
+current_file = None
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
+
+def set_current_file(tabs):
+    def handler(index):
+        global current_file
+        current_file = tabs._files[index]
+
+
+    return handler
+
+
 
 def create_webview(par, box):
     global g
@@ -1204,9 +1215,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 class Content(QWidget):
 
-    def __init__(self, nodes, container=None):
+    def __init__(self, nodes, container=None, file=None):
         super(Content, self).__init__()
         self.nodes = nodes
+        self.file = file
+
         self.container = container
 
         self.box = QVBoxLayout()
@@ -1242,6 +1255,19 @@ class Content(QWidget):
         global user_metadata
         global loop
         global g
+        global current_file
+        global set_current_file
+
+        def download_source(file):
+            global url
+            global user_metadata
+            def handler():
+                c = os.getcwd()
+                os.chdir(user_metadata["downloads_folder"])
+                download(url, file, user_metadata["downloads_folder"])
+                os.chdir(c)
+
+            return handler
 
         def button_click(node):
             def handler():
@@ -1316,7 +1342,7 @@ class Content(QWidget):
                 self.box.addWidget(web)
             if node["type"] == "image":
                 web = create_webview(self, self.box)
-                html = """<img src='""" + url + "/" + node["file"] + "'/>"
+                html = """<img src='""" + node["file"] + "'/>"
                 web.setHtml(html)
                 self.box.addWidget(web)
             if node["type"] == "literate":
@@ -1342,6 +1368,9 @@ class Content(QWidget):
                 web = create_webview(self, self.box)
                 web.setMinimumHeight(node.get("height", 480))
                 web.setHtml(html)
+                button = QPushButton("Download Source")
+                button.released.connect(download_source(node["file"]))
+                self.box.addWidget(button)
                 self.box.addWidget(web)
             if node["type"] == "md":
                 web = create_webview(self, self.box)
@@ -1363,6 +1392,9 @@ class Content(QWidget):
                         break
                 if has_more:
                     nested_container = QTabWidget()
+                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
+                    nested_container._files = [node["link"]["file"]]
+                    container._files.append(node["link"]["file"])
                     container.addTab(nested_container, node["link"]["file"])
                     web.__link =  nested_container
                     nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
@@ -1370,6 +1402,7 @@ class Content(QWidget):
                 else:
                     web.__link =  Content(nodes_recurse, container=container)
                     container.addTab(web.__link, node["link"]["file"])
+                    container._files.append(node["link"]["file"])
             if node["type"] == "transclusion":
                 web = create_webview(self, self.box)
 
@@ -1402,6 +1435,9 @@ class Content(QWidget):
 
                 if has_more:
                     nested_container = QTabWidget()
+                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
+                    nested_container._files = [node["transclusion"]["file"]]
+                    container._files.append(node["transclusion"]["file"])
                     container.addTab(nested_container, node["transclusion"]["file"])
                     web.__link =  nested_container
                     nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
@@ -1409,6 +1445,7 @@ class Content(QWidget):
                 else:
                     web.__link =  Content(nodes_recurse, container=container)
                     container.addTab(web.__link, node["transclusion"]["file"])
+                    container._files.append(node["transclusion"]["file"])
             if node["type"] == "text":
                 web = create_webview(self, self.box)
                 web.setHtml(node["text"])
@@ -1418,12 +1455,17 @@ class Window(QMainWindow):
 
     def createMenuBar(self):
 
+        def edit():
+            global current_file
+            global user_metadata
+            os.system(user_metadata["editor"] + " " + "server/" +  current_file + " &")
+
         def refresh():
             global url
             global index_metadata
             global user_metadata
             global g
-
+            global set_current_file
 
             r = requests.get(url + "/index.yaml")
             index_metadata = yaml.load(r.text)
@@ -1433,6 +1475,8 @@ class Window(QMainWindow):
             root = r.text
             nodes = yaml.load(root)["nodes"]
             tabs = QTabWidget()
+            tabs.tabBarClicked.connect(set_current_file(tabs))
+            tabs._files = [index_metadata["root"]]
             self.tabs = tabs
 
             self.index = Content(nodes, container=self.tabs)
@@ -1451,11 +1495,18 @@ class Window(QMainWindow):
         debugMenu.addAction(self.refreshAction)
         self.refreshAction.triggered.connect(refresh)
 
+        self.editAction = QAction(self)
+        self.editAction.setText("&Edit")
+        debugMenu.addAction(self.editAction)
+        self.editAction.triggered.connect(edit)
+
+
     def __init__(self, parent=None):
         global url
         global index_metadata
         global user_metadata
         global g
+        global current_file
         super().__init__(parent)
 
         r = requests.get(url + "/index.yaml")
@@ -1476,7 +1527,12 @@ class Window(QMainWindow):
         # https://gist.github.com/espdev/4f1565b18497a42d317cdf2531b7ef05
         # https://doc.qt.io/qt-5.12/style-reference.html
         self.tabs = tabs
-        self.index = Content(nodes, container=tabs)
+        tabs.tabBarClicked.connect(set_current_file(tabs))
+        tabs._files = [index_metadata["root"]]
+        current_file = index_metadata["root"]
+        self.tabs = tabs
+
+        self.index = Content(nodes, container=tabs, file=index_metadata["root"])
         tabs.insertTab(0, self.index, index_metadata["root"])
         tabs.setCurrentIndex(0)
         # self.setStyleSheet("background-color: whitesmoke;");

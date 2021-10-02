@@ -1,0 +1,38 @@
+nodes:
+ - type: "md"
+   text: |
+     # Welcome
+
+     This is a project built during the reinvention jam of *handmade network*!
+
+     External link [gooogle](https://ddg.gg)
+
+
+ - type: "literate"
+   file: "source.yaml"
+
+ - type: "snippet"
+   lang: "python"
+   text: |
+     print("hello")
+
+ - type: "text"
+   text: |
+    Plain Text
+
+ - type: "code"
+   text: |
+     global exec_ret
+     def hw():
+        return "This was the output of a python program"
+     print(nodes)
+     exec_ret = hw()
+
+
+ - type: "transclusion"
+   transclusion:
+        comment: "My comment"
+        file: test.yaml
+        section: "1"
+        authorisation: monm@$
+

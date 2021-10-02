@@ -26,6 +26,14 @@ nodes:
 
  - type: "link"
    link:
+        file: source_demos.yaml
+
+ - type: "link"
+   link:
+        file: video_demo.yaml
+
+ - type: "link"
+   link:
         file: setup.yaml
 
  - type: "transclusion"

@@ -1,7 +1,7 @@
 nodes:
  - type: "md"
    text: |
-     # Future Plans
+     # Future 
 
      1. Kivy / Opengl / raylib
      3. RSS
@@ -15,6 +15,41 @@ nodes:
      11. Scripting
      12. Magnet (Linked torrents with signatures)
 
+     # More reinvention possibilities
+
+     1. Reinvent Grid Layout which grows by childrens size
+     2. Sane Event bubbling
+     3. Render markdown in Canvas / Raylib / Opengl to get ridd of webkit. Write renderer in C ?
+     4. Layout via code -
+
+        Get window dimensions and element dimensions, reference element dimensions. Primitives,
+
+        1. Fix to right, left, bottom edges
+        2. Center
+        3. Hide / Show / Select from breakpoint
+        4. Top/Left/Bottom of
+        5. Is Visible
+
+     5. Control any css property on these events like opacity via YAML
+     6. Support local folders more easily with seeding support and forks. GPG and Sha support. 
+     7. Support your own CSS
+     8. FOAF model. Trusted keyexchange servers. Sync feeds.
+     9. Better Text wrap. Input element.
+     10. Explore QML support.
+
+     HTML was initially just for document rendering. Alternate Layouts
+
+      1. Row 
+      2. Column 
+      3. Relative 
+      4. Flow
+      5. Grid
+      6. Flex 
+      7. Cassowary 
+      8. Graph Layout algorithms 
+      9. Text Wrapping, Hyphenation 
+      10. Scene graph 
+
  - type: "md"
    section: "main"
    height: 300
@@ -24,9 +59,11 @@ nodes:
      1. Height calculation
      2. Margins have some extra space
      3. YAML errors crash
+     4. Scroll / resize are icky
 
      # Next Todo
 
      - [ ] Plugin System for Bookmarks and Backups (see Discord)
+     - [ ] Add Research Notes Tab
 
 

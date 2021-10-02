@@ -11,18 +11,11 @@ import os
 from jinja2 import Environment, BaseLoader
 Template = Environment(loader=BaseLoader, block_start_string="@%", block_end_string="@%",variable_start_string="@[", variable_end_string="@]")
 
-
-url = sys.argv[1]
-file = sys.argv[2]
-folder = sys.argv[3]
-os.chdir(folder)
-
-def main():
-    global url
-    global file
+def download(url, file, folder):
 
     r = requests.get(url + "/" + file)
     metadata = yaml.load(r.text)
+
     nodes = metadata["tangle"]
 
     for key, node in nodes.items():
@@ -48,6 +41,17 @@ def main():
 
         if "post" in mangle_node:
             exec(mangle_node["post"])
+
+
+
+def main():
+    url = sys.argv[1]
+    file = sys.argv[2]
+    folder = sys.argv[3]
+
+
+    os.chdir(folder)
+    download(url, file, folder)
 
 if __name__ == '__main__':
     main()
