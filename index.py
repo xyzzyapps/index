@@ -1501,6 +1501,30 @@ class Window(QMainWindow):
         debugMenu.addAction(self.editAction)
         self.editAction.triggered.connect(edit)
 
+    def load_page(self):
+        url = self.web_address.text()
+        global index_metadata
+        global user_metadata
+        global g
+        global set_current_file
+
+        r = requests.get(url + "/" + "index.yaml")
+        index_metadata = yaml.load(r.text)
+        with open("user_metadata.yaml", 'r') as reader:
+            user_metadata = yaml.load(reader.read())
+        r = requests.get(url + "/" + index_metadata["root"])
+        root = r.text
+        nodes = yaml.load(root)["nodes"]
+        tabs = QTabWidget()
+        tabs.tabBarClicked.connect(set_current_file(tabs))
+        tabs._files = [index_metadata["root"]]
+        self.tabs = tabs
+
+        self.index = Content(nodes, container=self.tabs)
+        tabs.insertTab(0, self.index, index_metadata["root"])
+        tabs.setCurrentIndex(0)
+        self.setCentralWidget(tabs)
+
 
     def __init__(self, parent=None):
         global url
@@ -1520,6 +1544,12 @@ class Window(QMainWindow):
         root = r.text
         nodes = yaml.load(root)["nodes"]
 
+        self.browser_toolbar = QToolBar()
+        self.addToolBar(self.browser_toolbar)
+        self.web_address = QLineEdit()
+        self.web_address.returnPressed.connect(self.load_page)
+        self.browser_toolbar.addWidget(self.web_address)
+        self.web_address.setText(url)
 
         self.setWindowTitle("Index")
         self.setGeometry(g.x(), g.y(), g.width(), g.height())
