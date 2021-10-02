@@ -3,6 +3,8 @@
 This is a project built during the reinvention jam of handmade network!
 Index is a browser with some twists.
 
+![](demo.gif)
+
 # Current Status
 
 The project is usable for local setups. It is highly insecure as it supports arbitrary code execution. Browsers work well because code is executed in a secure sandbox.
