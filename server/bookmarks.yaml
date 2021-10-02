@@ -1,0 +1,59 @@
+nodes:
+ - type: "md"
+   height: 549
+   text: |
+
+     ## Xanadu
+
+     https://web.archive.org/web/20150408093118/http://devel.mplayer2.org/
+     https://github.com/mozilla/popcorn-js
+
+     ## Sandbox
+
+     https://crossbowerbt.github.io/the_joy_of_chroot.html
+
+     ## Python3
+
+     https://medium.com/@Lola_Dam/packaging-pyqt-application-using-pyqtdeploy-for-both-linux-and-android-32ac7824708b
+     https://pypi.org/project/PySimpleGUI/
+     https://labix.org/lunatic-python
+     https://github.com/moderngl/moderngl
+     https://pycairo.readthedocs.io/
+
+     ## Browsers
+
+     https://www.linuxjournal.com/article/2840
+     https://en.wikipedia.org/wiki/Time_bomb_(software)
+     https://github.com/spritejs/spritejs
+     https://stackoverflow.com/questions/6912680/html5-canvas-library-for-ui-widgets
+     https://github.com/d3fc/d3fc/blob/v11.0.0/src/layout/flexbox.js
+     http://svgtutorial.com/
+     https://wiki.tcl-lang.org/page/Geometry+Managers
+     https://xorro-p2p.github.io/
+     https://tkdocs.com/tutorial/grid.html
+
+     https://www.w3.org/MarkUp/Forms/2010/xforms11-qr.html
+     https://html.form.guide/email-form/email-form-mailto.html
+
+     https://github.com/lc-soft/LCUI/
+     https://github.com/memononen/nanovg
+
+     https://sinister.ly/Thread-Simple-web-browser-in-Lua
+     https://web.archive.org/web/20140903232625/http://limpet.net/mbrubeck/
+     https://unix.stackexchange.com/questions/40852/source-code-of-original-netscape-navigator
+
+     ## Torrent
+
+     https://troydm.github.io/blog/2013/04/24/hosting-your-own-remote-private-torrent-tracker/
+     https://github.com/webtorrent/bittorrent-tracker
+     https://markuseliasson.se/article/bittorrent-in-python/
+
+     Voldemort / Cassandra are DHT
+
+     https://web.archive.org/web/20111129082011/http://dijjer.org/
+     https://github.com/lmatteis/torrent-net
+     https://github.com/amark/gun
+     https://scuttlebutt.nz/get-started/
+     https://www.webalive.com.au/local-business-website-features/
+     https://github.com/UWNetworksLab/uProxy-p2p
+

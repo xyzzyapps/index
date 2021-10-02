@@ -51,5 +51,8 @@ nodes:
    link:
         file: changelog.yaml
 
+ - type: "link"
+   link:
+        file: bookmarks.yaml
 
 
