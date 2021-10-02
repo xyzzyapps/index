@@ -17,6 +17,7 @@ import utils
 import asyncio
 import jinja2
 
+# https://doc.qt.io/qtforpython/examples/example_webenginewidgets__tabbedbrowser.html
 # https://www.pythonguis.com/tutorials/qscrollarea/
 # https://stackoverflow.com/questions/31928444/qt-qwebenginepagesetwebchannel-transport-object
 # https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
@@ -1546,6 +1547,9 @@ class Window(QMainWindow):
 
         self.browser_toolbar = QToolBar()
         self.addToolBar(self.browser_toolbar)
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
+        self.status.showMessage("Loaded")
         self.web_address = QLineEdit()
         self.web_address.returnPressed.connect(self.load_page)
         self.browser_toolbar.addWidget(self.web_address)
