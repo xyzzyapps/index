@@ -1,9 +1,12 @@
+appdirs==1.4.4
 appnope==0.1.2
 backcall==0.2.0
+bencoding==0.2.6
 bleach==4.1.0
 certifi==2021.5.30
 charset-normalizer==2.0.6
 decorator==5.1.0
+flatbencode==0.2.1
 idna==3.2
 ipdb==0.13.9
 ipython==7.28.0
@@ -27,11 +30,13 @@ PyQt5-Qt5==5.15.2
 PyQt5-sip==12.9.0
 PyQtWebEngine==5.15.4
 PyQtWebEngine-Qt5==5.15.2
+python-qbittorrent==0.4.2
 PyYAML==5.4.1
 raylib-py==0.1.1
 requests==2.26.0
 six==1.16.0
 toml==0.10.2
+torf==3.1.3
 traitlets==5.1.0
 urllib3==1.26.7
 wcwidth==0.2.5

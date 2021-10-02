@@ -1,0 +1,9 @@
+nodes:
+ - type: "image"
+   file: "https://upload.wikimedia.org/wikipedia/commons/0/01/Charvet_shirt.jpg"
+
+ - type: "button"
+   button:
+     label: "Buy"
+     id: monm@$
+

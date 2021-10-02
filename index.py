@@ -4,6 +4,7 @@ import sys
 import os
 import requests
 from download_source import download
+from magnet import download_magnet
 
 from PyQt5.QtWidgets import*
 from PyQt5.QtCore import*

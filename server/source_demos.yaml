@@ -1,13 +1,4 @@
 nodes:
- - type: "md"
-   text: |
-     # Welcome
-
-     This is a project built during the reinvention jam of *handmade network*!
-
-     External link [gooogle](https://ddg.gg)
-
-
  - type: "literate"
    file: "source.yaml"
 

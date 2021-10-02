@@ -1,14 +1,28 @@
 nodes:
+ - type: "md"
+   text: |
+     # Welcome
+
+     This is a project built during the reinvention jam of *handmade network*!
+
+     Why use DNS when you can use torrents ?
+
+     Creating torrent files is easy. Just use the create torrent button from the UI in
+     qBitTorrent. Select Private to avoid DHT, so that only people with the magnet get the
+     torrent.
+
+     You can download a torrent folder with the of the helper script.
+     You will need to enable qBitTorrent's Web UI mode to use the script.
+
+     To run your own tracker you can use `opentracker`.
+
+     Open External link Test [gooogle](https://ddg.gg).
+
  - type: "html"
    url: "p5.html"
 
  - type: "image"
    file: "https://upload.wikimedia.org/wikipedia/commons/e/ea/NCSA_Mosaic_Browser_Screenshot.png"
-
- - type: "button"
-   button:
-     label: "buy"
-     id: monm@$
 
  - type: "url"
    url: "https://www.youtube.com"
