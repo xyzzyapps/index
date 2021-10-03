@@ -3,7 +3,7 @@ nodes:
    text: |
      # Future 
 
-     1. Kivy / Opengl / raylib
+     1. Kivy / Opengl / raylib and support visualizing links
      3. RSS
      4. Sandbox Lua, Python with chroot or PyPy
      5. Sitemap / Microdata
@@ -14,6 +14,38 @@ nodes:
      10. sphinx support
      11. Scripting
      12. Magnet (Linked torrents with signatures)
+
+     # Possible Plugins
+     
+     1. Bookmarks
+     2. Archives
+     3. Password Manager
+     4. Privacy
+     5. Payments
+     6. Search
+     7. More formats
+     8. See greasemonkey, uzbl, existing apis  ...
+     9. Pipe node, like vim
+     10. Time / History tracking
+
+     From discord,
+
+    - Search contents of all cached pages at once.
+    - Ctrl+F search all tabs at once
+    - Ctrl+F search backwards in history
+    - Bookmarks/favorites with tags and notes (notes are pages themselves with links and everything?)
+    - Special treatment of cache for favorited pages (e.g. Clear cache except favorited pages)
+    - "Versioned cache"/automatic archiving
+    - Read-later tree
+    - Visual search. Draw a picture, program renders all cached pages or goes backwards in history and compares.
+    - Button/input that generates word cloud of page (not useful, but vaguely interesting to look at).
+    - History of visited pages saved as a tree/graph rather than a line.
+    - "Window manager features" to layout tabs within the window. Picture-in-picture stuff?
+    - For the current page, show in UI:
+    - - Cache date
+    - - File(s)/resources size
+    - - Download speed while downloading
+    - First-class "wiki support" for all pages. e.g. inline comments, edit-suggestions, adding translations
 
      # More reinvention possibilities
 
@@ -56,14 +88,15 @@ nodes:
    text: |
      # Known Bugs
 
-     1. Height calculation
+     1. Height calculation is messed up WebView, resize not supported
      2. Margins have some extra space
      3. YAML errors crash
      4. Scroll / resize are icky
+     5. If the height / width of WebView is not set to Maxiumum ... then there is a flickr on screen
 
      # Next Todo
 
      - [ ] Plugin System for Bookmarks and Backups (see Discord)
-     - [ ] Add Research Notes Tab
+     - [ ] Editor
 
 

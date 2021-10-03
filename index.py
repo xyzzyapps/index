@@ -39,7 +39,6 @@ def set_current_file(tabs):
         global current_file
         current_file = tabs._files[index]
 
-
     return handler
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -211,7 +210,7 @@ self.%sAction.triggered.connect(custom_action(%s))
         self.web_address.setText(url)
 
         self.setWindowTitle("Index")
-        self.setGeometry(g.x(), g.y(), g.width(), g.height())
+        self.setGeometry(g.x(), g.y(), 1024, g.height())
 
         tabs = QTabWidget()
         # https://gist.github.com/espdev/4f1565b18497a42d317cdf2531b7ef05
@@ -267,7 +266,7 @@ def create_webview(par, box):
 
     web.setSizeIncrement(QSizePolicy.Expanding, QSizePolicy.Expanding)
     web.setPage(CustomWebEnginePage(par, web, box))
-    web.setMinimumWidth(g.width() - 96)
+    web.setMinimumWidth(960)
     return web
 
 class Content(QWidget):
@@ -392,10 +391,12 @@ class Content(QWidget):
             if node["type"] == "url":
                 web = create_webview(self, self.box)
                 web.setUrl(QUrl(node["url"]))
+                web.setMaximumHeight(node.get("height", 480))
                 self.box.addWidget(web)
             if node["type"] == "youtube":
                 web = create_webview(self, self.box)
                 web.setUrl(QUrl("https://www.youtube.com/watch?v=" + node["id"]))
+                web.setMaximumHeight(node.get("height", 480))
                 self.box.addWidget(web)
             if node["type"] == "image":
                 web = create_webview(self, self.box)
@@ -427,6 +428,8 @@ class Content(QWidget):
                 web.setMinimumHeight(node.get("height", 480))
                 web.setHtml(html)
                 button = QPushButton("Download Source")
+                button.setMaximumWidth(200)
+
                 button.released.connect(download_source(node["file"]))
                 self.box.addWidget(button)
                 self.box.addWidget(web)
@@ -437,6 +440,8 @@ class Content(QWidget):
                 self.box.addWidget(web)
             if node["type"] == "button":
                 button = QPushButton(node["button"]["label"])
+                button.setMaximumWidth(200)
+
                 button.released.connect(button_click(node["button"]))
                 self.box.addWidget(button)
             if node["type"] == "link":
@@ -486,7 +491,7 @@ class Content(QWidget):
                     web.setHtml(html)
                     self.box.addWidget(web)
                     button = QPushButton("GOTO LINK")
-                    web.setMaximumHeight(transcluded_section.get("height", 480))
+                    web.setMinimumHeight(transcluded_section.get("height", 480))
                     button.released.connect(goto_tab_section(node["transclusion"]["file"], transcluded_section["section"]))
                     self.box.addWidget(button)
                     self.box.addWidget(web)
