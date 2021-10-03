@@ -35,7 +35,9 @@ python -m http.server 8083 # start the http server in any folder for testing
 
 In another tab start the browser with,
 
-python index.py "http://127.0.0.1:8083"
+python index.py ./server/
+
+you can also do python "http://127.0.0.1:8083" if you want to start the server explicitly.
 ```
 
 

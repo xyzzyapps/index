@@ -5,6 +5,11 @@ import os
 import requests
 from download_source import download
 from magnet import download_magnet
+import http.server
+import socketserver
+from multiprocessing import Process
+import time
+
 
 from PyQt5.QtWidgets import*
 from PyQt5.QtCore import*
@@ -22,6 +27,15 @@ import jinja2
 # https://stackoverflow.com/questions/31928444/qt-qwebenginepagesetwebchannel-transport-object
 # https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
 # https://stackoverflow.com/questions/26278858/how-to-get-the-contentsize-of-a-web-page-in-qt5-4-qtwebengine
+
+def safe_load(text):
+
+    try:
+        nodes = yaml.load(text, yaml.SafeLoader)
+    except yaml.YAMLError as exc:
+        return {"nodes": [{"text" : "Parse Error"}]}
+
+    return nodes
 
 class CustomWebEnginePage(QWebEnginePage):
 
@@ -1350,13 +1364,14 @@ class Content(QWidget):
             if node["type"] == "literate":
                 r = requests.get(url + "/" + node["file"])
                 root = r.text
-                lnodes = yaml.load(root)["tangle"]
+                lnodes = safe_load(root)["tangle"]
 
                 for key, lnode in lnodes.items():
                     if lnode.get("from", None):
                         r = requests.get(url + "/" + lnode["from"]["file"])
                         root = r.text
-                        nodes_recurse = yaml.load(root)["tangle"]
+                        nodes_recurse = safe_load(root)["tangle"]
+
                         lnodes[key]["text"] = nodes_recurse[key]["text"]
 
                 md_section = []
@@ -1386,7 +1401,8 @@ class Content(QWidget):
             if node["type"] == "link":
                 r = requests.get(url + "/" + node["link"]["file"])
                 root = r.text
-                nodes_recurse = yaml.load(root)["nodes"]
+                nodes_recurse = safe_load(root)["nodes"]
+
                 has_more = False
                 for n in  nodes_recurse:
                     if n["type"] == "transclusion" or n["type"] == "link" :
@@ -1410,7 +1426,8 @@ class Content(QWidget):
 
                 r = requests.get(url + "/" + node["transclusion"]["file"])
                 root = r.text
-                nodes_recurse = yaml.load(root)["nodes"]
+                nodes_recurse = safe_load(root)["nodes"]
+
 
                 has_more = False
                 for n in  nodes_recurse:
@@ -1456,7 +1473,8 @@ class Content(QWidget):
 class Window(QMainWindow):
 
     def createMenuBar(self):
-
+        global user_metadata
+        
         def edit():
             global current_file
             global user_metadata
@@ -1470,12 +1488,12 @@ class Window(QMainWindow):
             global set_current_file
 
             r = requests.get(url + "/index.yaml")
-            index_metadata = yaml.load(r.text)
+            index_metadata = safe_load(r.text)
             with open("user_metadata.yaml", 'r') as reader:
-                user_metadata = yaml.load(reader.read())
+                user_metadata = safe_load(reader.read())
             r = requests.get(url + "/" + index_metadata["root"])
             root = r.text
-            nodes = yaml.load(root)["nodes"]
+            nodes = safe_load(root)["nodes"]
             tabs = QTabWidget()
             tabs.tabBarClicked.connect(set_current_file(tabs))
             tabs._files = [index_metadata["root"]]
@@ -1502,6 +1520,40 @@ class Window(QMainWindow):
         debugMenu.addAction(self.editAction)
         self.editAction.triggered.connect(edit)
 
+        def custom_action(cmd):
+            def handler():
+                os.system(cmd["script"] + " " + current_file + " " + url)
+
+            return handler
+
+        for elem in user_metadata["menu"]:
+            exec("""
+self.%sAction = QAction(self)
+self.%sAction.setText("&%s")
+debugMenu.addAction(self.%sAction)
+self.%sAction.triggered.connect(custom_action(%s))
+            """ % (
+                elem["name"], 
+                elem["name"],
+                elem["name"],
+                elem["name"],
+                elem["name"],
+                "elem"
+                )
+            , globals()
+            , {
+                "elem": elem,
+                "self": self,
+                "debugMenu": debugMenu,
+                "custom_action": custom_action
+              }
+            )
+
+
+        with open("user_metadata.yaml", 'r') as reader:
+            user_metadata = safe_load(reader.read())
+
+
     def load_page(self):
         url = self.web_address.text()
         global index_metadata
@@ -1510,12 +1562,15 @@ class Window(QMainWindow):
         global set_current_file
 
         r = requests.get(url + "/" + "index.yaml")
-        index_metadata = yaml.load(r.text)
+        index_metadata  = safe_load(r.text)
+
         with open("user_metadata.yaml", 'r') as reader:
-            user_metadata = yaml.load(reader.read())
+            user_metadata = safe_load(reader.read())
+
         r = requests.get(url + "/" + index_metadata["root"])
         root = r.text
-        nodes = yaml.load(root)["nodes"]
+        nodes = safe_load(root)["nodes"]
+
         tabs = QTabWidget()
         tabs.tabBarClicked.connect(set_current_file(tabs))
         tabs._files = [index_metadata["root"]]
@@ -1536,14 +1591,14 @@ class Window(QMainWindow):
         super().__init__(parent)
 
         r = requests.get(url + "/index.yaml")
-        index_metadata = yaml.load(r.text)
+        index_metadata = safe_load(r.text)
 
         with open("user_metadata.yaml", 'r') as reader:
-            user_metadata = yaml.load(reader.read())
+            user_metadata = safe_load(reader.read())
 
         r = requests.get(url + "/" + index_metadata["root"])
         root = r.text
-        nodes = yaml.load(root)["nodes"]
+        nodes = safe_load(root)["nodes"]
 
         self.browser_toolbar = QToolBar()
         self.addToolBar(self.browser_toolbar)
@@ -1592,6 +1647,32 @@ def main():
 
     # os.system("python downloads/test.py")
 
+
+PORT = 8083
+DIRECTORY = url
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+
+def f(name):
+    server_class = http.server.HTTPServer
+    handler_class=Handler
+    server_address = ('', PORT)
+    httpd = server_class(server_address, handler_class)
+    httpd.serve_forever()
+
+
 if __name__ == '__main__':
-    main()
+    if url.startswith("http"):
+        main()
+    else:
+        url = "http://127.0.0.1:" + str(PORT)
+
+        p = Process(target=f, args=('bob',))
+        p.start()
+        time.sleep(2)
+        main()
+
 

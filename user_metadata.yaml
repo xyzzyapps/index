@@ -9,3 +9,6 @@ language:
 address:
 editor: /Applications/Sublime\ Text.app/Contents/MacOS/sublime_text
 downloads_folder: "downloads"
+menu:
+  - name: Test
+    script: ls .
