@@ -19,6 +19,10 @@ nodes:
 
      Currently the project uses Python3 and PyQt.
 
+ - type: "link"
+   link:
+        file: literate_source_code.yaml
+
 
  - type: "link"
    link:

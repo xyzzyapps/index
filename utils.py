@@ -1,5 +1,15 @@
 import smtplib, ssl
 from email.mime.text import MIMEText
+import yaml
+
+def safe_load(text):
+
+    try:
+        nodes = yaml.load(text, yaml.SafeLoader)
+    except yaml.YAMLError as exc:
+        return {"nodes": [{"text" : "Parse Error"}]}
+
+    return nodes
 
 def send_mail(to_mail, name, reply_to, server, password, subject, message):
     context = ssl.create_default_context()

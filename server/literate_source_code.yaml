@@ -1,0 +1,4 @@
+nodes:
+ - type: "literate"
+   file: "complete_source.yaml"
+

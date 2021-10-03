@@ -1,4 +1,5 @@
 import yaml
+from utils import safe_load
 import re
 import sys
 import os
@@ -9,7 +10,6 @@ import http.server
 import socketserver
 from multiprocessing import Process
 import time
-
 
 from PyQt5.QtWidgets import*
 from PyQt5.QtCore import*
@@ -22,21 +22,213 @@ import utils
 import asyncio
 import jinja2
 
-# https://doc.qt.io/qtforpython/examples/example_webenginewidgets__tabbedbrowser.html
-# https://www.pythonguis.com/tutorials/qscrollarea/
-# https://stackoverflow.com/questions/31928444/qt-qwebenginepagesetwebchannel-transport-object
-# https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
-# https://stackoverflow.com/questions/26278858/how-to-get-the-contentsize-of-a-web-page-in-qt5-4-qtwebengine
+url = sys.argv[1]
+index_metadata = None
+user_metadata = None
+exec_ret = None
+g = None
+current_file = None
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
-def safe_load(text):
+PORT = 8083
+DIRECTORY = url
 
-    try:
-        nodes = yaml.load(text, yaml.SafeLoader)
-    except yaml.YAMLError as exc:
-        return {"nodes": [{"text" : "Parse Error"}]}
+def set_current_file(tabs):
+    def handler(index):
+        global current_file
+        current_file = tabs._files[index]
 
-    return nodes
 
+    return handler
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+def f(name):
+    server_class = http.server.HTTPServer
+    handler_class=Handler
+    server_address = ('', PORT)
+    httpd = server_class(server_address, handler_class)
+    httpd.serve_forever()
+
+def main():
+    global url
+    global index_metadata
+    global user_metadata
+    global g
+
+    app = QApplication(sys.argv)
+    g = QApplication.desktop().availableGeometry()
+    win = Window()
+    QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
+    sys.exit(app.exec_())
+
+    # with open('downloads/test.py', 'w') as a_writer:
+    #    a_writer.write(r.text)
+
+    # os.system("python downloads/test.py")
+
+class Window(QMainWindow):
+
+    def createMenuBar(self):
+        global user_metadata
+
+        def edit():
+            global current_file
+            global user_metadata
+            os.system(user_metadata["editor"] + " " + "server/" +  current_file + " &")
+
+        def refresh():
+            global url
+            global index_metadata
+            global user_metadata
+            global g
+            global set_current_file
+
+            r = requests.get(url + "/index.yaml")
+            index_metadata = safe_load(r.text)
+            with open("user_metadata.yaml", 'r') as reader:
+                user_metadata = safe_load(reader.read())
+            r = requests.get(url + "/" + index_metadata["root"])
+            root = r.text
+            nodes = safe_load(root)["nodes"]
+            tabs = QTabWidget()
+            tabs.tabBarClicked.connect(set_current_file(tabs))
+            tabs._files = [index_metadata["root"]]
+            self.tabs = tabs
+
+            self.index = Content(nodes, container=self.tabs)
+            tabs.insertTab(0, self.index, index_metadata["root"])
+            tabs.setCurrentIndex(0)
+            self.setCentralWidget(tabs)
+
+        menuBar = QMenuBar(self)
+        self.setMenuBar(menuBar)
+
+        debugMenu = QMenu("&Controls", self)
+        menuBar.addMenu(debugMenu)
+
+        self.refreshAction = QAction(self)
+        self.refreshAction.setText("&Refresh")
+        debugMenu.addAction(self.refreshAction)
+        self.refreshAction.triggered.connect(refresh)
+
+        self.editAction = QAction(self)
+        self.editAction.setText("&Edit")
+        debugMenu.addAction(self.editAction)
+        self.editAction.triggered.connect(edit)
+
+        def custom_action(cmd):
+            def handler():
+                os.system(cmd["script"] + " " + current_file + " " + url)
+
+            return handler
+
+        for elem in user_metadata["menu"]:
+            exec("""
+self.%sAction = QAction(self)
+self.%sAction.setText("&%s")
+debugMenu.addAction(self.%sAction)
+self.%sAction.triggered.connect(custom_action(%s))
+            """ % (
+                elem["name"], 
+                elem["name"],
+                elem["name"],
+                elem["name"],
+                elem["name"],
+                "elem"
+                )
+            , globals()
+            , {
+                "elem": elem,
+                "self": self,
+                "debugMenu": debugMenu,
+                "custom_action": custom_action
+              }
+            )
+
+
+        with open("user_metadata.yaml", 'r') as reader:
+            user_metadata = safe_load(reader.read())
+
+
+    def load_page(self):
+        url = self.web_address.text()
+        global index_metadata
+        global user_metadata
+        global g
+        global set_current_file
+
+        r = requests.get(url + "/" + "index.yaml")
+        index_metadata  = safe_load(r.text)
+
+        with open("user_metadata.yaml", 'r') as reader:
+            user_metadata = safe_load(reader.read())
+
+        r = requests.get(url + "/" + index_metadata["root"])
+        root = r.text
+        nodes = safe_load(root)["nodes"]
+
+        tabs = QTabWidget()
+        tabs.tabBarClicked.connect(set_current_file(tabs))
+        tabs._files = [index_metadata["root"]]
+        self.tabs = tabs
+
+        self.index = Content(nodes, container=self.tabs)
+        tabs.insertTab(0, self.index, index_metadata["root"])
+        tabs.setCurrentIndex(0)
+        self.setCentralWidget(tabs)
+
+
+    def __init__(self, parent=None):
+        global url
+        global index_metadata
+        global user_metadata
+        global g
+        global current_file
+        super().__init__(parent)
+
+        r = requests.get(url + "/index.yaml")
+        index_metadata = safe_load(r.text)
+
+        with open("user_metadata.yaml", 'r') as reader:
+            user_metadata = safe_load(reader.read())
+
+        r = requests.get(url + "/" + index_metadata["root"])
+        root = r.text
+        nodes = safe_load(root)["nodes"]
+
+        self.browser_toolbar = QToolBar()
+        self.addToolBar(self.browser_toolbar)
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
+        self.status.showMessage("Loaded")
+        self.web_address = QLineEdit()
+        self.web_address.returnPressed.connect(self.load_page)
+        self.browser_toolbar.addWidget(self.web_address)
+        self.web_address.setText(url)
+
+        self.setWindowTitle("Index")
+        self.setGeometry(g.x(), g.y(), g.width(), g.height())
+
+        tabs = QTabWidget()
+        # https://gist.github.com/espdev/4f1565b18497a42d317cdf2531b7ef05
+        # https://doc.qt.io/qt-5.12/style-reference.html
+        self.tabs = tabs
+        tabs.tabBarClicked.connect(set_current_file(tabs))
+        tabs._files = [index_metadata["root"]]
+        current_file = index_metadata["root"]
+        self.tabs = tabs
+
+        self.index = Content(nodes, container=tabs, file=index_metadata["root"])
+        tabs.insertTab(0, self.index, index_metadata["root"])
+        tabs.setCurrentIndex(0)
+        # self.setStyleSheet("background-color: whitesmoke;");
+        self.setCentralWidget(tabs)
+        self.createMenuBar()
+        self.show()
 class CustomWebEnginePage(QWebEnginePage):
 
     def __init__(self, parent, webview, box):
@@ -63,24 +255,6 @@ class CustomWebEnginePage(QWebEnginePage):
             return False
         return super().acceptNavigationRequest(url,  _type, isMainFrame)
 
-url = sys.argv[1]
-index_metadata = None
-user_metadata = None
-exec_ret = None
-g = None
-current_file = None
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-
-def set_current_file(tabs):
-    def handler(index):
-        global current_file
-        current_file = tabs._files[index]
-
-
-    return handler
-
-
 
 def create_webview(par, box):
     global g
@@ -95,6 +269,247 @@ def create_webview(par, box):
     web.setPage(CustomWebEnginePage(par, web, box))
     web.setMinimumWidth(g.width() - 96)
     return web
+
+class Content(QWidget):
+
+    def __init__(self, nodes, container=None, file=None):
+        super(Content, self).__init__()
+        self.nodes = nodes
+        self.file = file
+
+        self.container = container
+
+        self.box = QVBoxLayout()
+        self.box.setSpacing(0)
+        self.widget = QWidget()
+        self.widget.setStyleSheet("""QWidget::pane {
+        margin: 0px,0px,0px,0px;
+        border: 0px;
+        padding: 0px;
+        }""")
+
+        scroll = QScrollArea()
+        self.widget.setLayout(self.box)
+
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(False)
+
+        self.main_box = QVBoxLayout()
+        self.main_box.setSpacing(0)
+        self.setLayout(self.main_box)
+        self.main_box.addWidget(scroll)
+
+        self.initUI(container)
+        scroll.setWidget(self.widget)
+
+        # Layout - main_box has scroll which has widget which has a box which has contents
+
+    def initUI(self, container):
+        # sectionMap = { }
+        global url
+        global index_metadata
+        global user_metadata
+        global loop
+        global g
+        global current_file
+        global set_current_file
+
+        def download_source(file):
+            global url
+            global user_metadata
+            def handler():
+                c = os.getcwd()
+                os.chdir(user_metadata["downloads_folder"])
+                download(url, file, user_metadata["downloads_folder"])
+                os.chdir(c)
+
+            return handler
+
+        def button_click(node):
+            def handler():
+                async def send_async():
+                    to_email = index_metadata["form_email"]
+                    from_email = user_metadata["email"]
+                    utils.send_mail(to_email, user_metadata["name"], from_email, user_metadata["smtp_host"], user_metadata["password"], node["label"], node["id"])
+
+                loop.run_until_complete(send_async())
+
+            return handler
+
+        def goto_tab_section(file, section):
+            nonlocal container
+            # nonlocal sectionMap
+            def handler():
+                i = container.currentIndex()
+                label = container.tabText(i)
+                found_tab = False
+
+                while 1:
+                    if i < container.count():
+                        if label == file:
+                            found_tab = True
+                            break
+                        else:
+                            i += 1
+                            label = container.tabText(i)
+                    else:
+                        break
+
+                container.setCurrentIndex(i)
+
+                #container.currentWidget().layout().itemAt(0).widget().widget().layout().itemAt(0)
+                # container.currentWidget().layout().itemAt(0).widget().ensureWidgetVisible(container.currentWidget().layout().itemAt(0).widget().children()[1])
+                # print([file, sectionMap[section]])
+
+            return handler
+
+        for node in self.nodes:
+            if node["type"] == "source-file":
+                web = create_webview(self, self.box)
+                r = requests.get(url + "/" + node["file"])
+                file_text = r.text
+                html = render_code(node["lang"], file_text)
+                web.setHtml(html)
+                self.box.addWidget(web)
+            if node["type"] == "code":
+                web = create_webview(self, self.box)
+
+                exec(node["text"], globals(), {
+                    "nodes": self.nodes
+                })
+                web.setHtml(exec_ret)
+                self.box.addWidget(web)
+            if node["type"] == "snippet":
+                web = create_webview(self, self.box)
+                html = render_code(node["lang"], node["text"])
+                web.setHtml(html)
+                self.box.addWidget(web)
+            if node["type"] == "html":
+                web = create_webview(self, self.box)
+                web.setUrl(QUrl(url + "/"  + node["url"]))
+                self.box.addWidget(web)
+            if node["type"] == "url":
+                web = create_webview(self, self.box)
+                web.setUrl(QUrl(node["url"]))
+                self.box.addWidget(web)
+            if node["type"] == "youtube":
+                web = create_webview(self, self.box)
+                web.setUrl(QUrl("https://www.youtube.com/watch?v=" + node["id"]))
+                self.box.addWidget(web)
+            if node["type"] == "image":
+                web = create_webview(self, self.box)
+                html = """<img src='""" + node["file"] + "'/>"
+                web.setHtml(html)
+                self.box.addWidget(web)
+            if node["type"] == "literate":
+                r = requests.get(url + "/" + node["file"])
+                root = r.text
+                lnodes = safe_load(root)["tangle"]
+
+                for key, lnode in lnodes.items():
+                    if lnode.get("from", None):
+                        r = requests.get(url + "/" + lnode["from"]["file"])
+                        root = r.text
+                        nodes_recurse = safe_load(root)["tangle"]
+
+                        lnodes[key]["text"] = nodes_recurse[key]["text"]
+
+                md_section = []
+                for key, lnode in lnodes.items():
+                    if lnode.get("doc", None):
+                        md_section.append(lnode["doc"])
+                    if lnode.get("text", None):
+                        md_section.append("```" + lnode.get("lang", "python") + "\n" + lnode["text"] + "\n" + "```")
+
+                html = render_md(md_section)
+                web = create_webview(self, self.box)
+                web.setMinimumHeight(node.get("height", 480))
+                web.setHtml(html)
+                button = QPushButton("Download Source")
+                button.released.connect(download_source(node["file"]))
+                self.box.addWidget(button)
+                self.box.addWidget(web)
+            if node["type"] == "md":
+                web = create_webview(self, self.box)
+                html = render_md(node["text"])
+                web.setHtml(html)
+                self.box.addWidget(web)
+            if node["type"] == "button":
+                button = QPushButton(node["button"]["label"])
+                button.released.connect(button_click(node["button"]))
+                self.box.addWidget(button)
+            if node["type"] == "link":
+                r = requests.get(url + "/" + node["link"]["file"])
+                root = r.text
+                nodes_recurse = safe_load(root)["nodes"]
+
+                has_more = False
+                for n in  nodes_recurse:
+                    if n["type"] == "transclusion" or n["type"] == "link" :
+                        has_more = True
+                        break
+                if has_more:
+                    nested_container = QTabWidget()
+                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
+                    nested_container._files = [node["link"]["file"]]
+                    container._files.append(node["link"]["file"])
+                    container.addTab(nested_container, node["link"]["file"])
+                    web.__link =  nested_container
+                    nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
+                    nested_container.setCurrentIndex(0)
+                else:
+                    web.__link =  Content(nodes_recurse, container=container)
+                    container.addTab(web.__link, node["link"]["file"])
+                    container._files.append(node["link"]["file"])
+            if node["type"] == "transclusion":
+                web = create_webview(self, self.box)
+
+                r = requests.get(url + "/" + node["transclusion"]["file"])
+                root = r.text
+                nodes_recurse = safe_load(root)["nodes"]
+
+
+                has_more = False
+                for n in  nodes_recurse:
+                    if n["type"] == "transclusion" or n["type"] == "link" :
+                        has_more = True
+                        break
+
+                transcluded_section = None
+                for n in  nodes_recurse:
+                    if n.get("section") == node["transclusion"]["section"]:
+                        transcluded_section = n
+
+                if transcluded_section:
+                    html = render_md([transcluded_section["text"], node["transclusion"]["comment"]])
+                    web.setHtml(html)
+                    self.box.addWidget(web)
+                    button = QPushButton("GOTO LINK")
+                    web.setMaximumHeight(transcluded_section.get("height", 480))
+                    button.released.connect(goto_tab_section(node["transclusion"]["file"], transcluded_section["section"]))
+                    self.box.addWidget(button)
+                    self.box.addWidget(web)
+                    # sectionMap[transcluded_section["section"]] = web
+                    button.setMaximumWidth(200)
+
+                if has_more:
+                    nested_container = QTabWidget()
+                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
+                    nested_container._files = [node["transclusion"]["file"]]
+                    container._files.append(node["transclusion"]["file"])
+                    container.addTab(nested_container, node["transclusion"]["file"])
+                    web.__link =  nested_container
+                    nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
+                    nested_container.setCurrentIndex(0)
+                else:
+                    web.__link =  Content(nodes_recurse, container=container)
+                    container.addTab(web.__link, node["transclusion"]["file"])
+                    container._files.append(node["transclusion"]["file"])
+            if node["type"] == "text":
+                web = create_webview(self, self.box)
+                web.setHtml(node["text"])
+                self.box.addWidget(web)
 
 def render_md(text):
     output = """<!DOCTYPE html>
@@ -1228,442 +1643,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </html>
 """
     return output
-
-class Content(QWidget):
-
-    def __init__(self, nodes, container=None, file=None):
-        super(Content, self).__init__()
-        self.nodes = nodes
-        self.file = file
-
-        self.container = container
-
-        self.box = QVBoxLayout()
-        self.box.setSpacing(0)
-        self.widget = QWidget()
-        self.widget.setStyleSheet("""QWidget::pane {
-        margin: 0px,0px,0px,0px;
-        border: 0px;
-        padding: 0px;
-        }""")
-
-        scroll = QScrollArea()
-        self.widget.setLayout(self.box)
-
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setWidgetResizable(False)
-
-        self.main_box = QVBoxLayout()
-        self.main_box.setSpacing(0)
-        self.setLayout(self.main_box)
-        self.main_box.addWidget(scroll)
-
-        self.initUI(container)
-        scroll.setWidget(self.widget)
-
-        # Layout - main_box has scroll which has widget which has a box which has contents
-
-    def initUI(self, container):
-        # sectionMap = { }
-        global url
-        global index_metadata
-        global user_metadata
-        global loop
-        global g
-        global current_file
-        global set_current_file
-
-        def download_source(file):
-            global url
-            global user_metadata
-            def handler():
-                c = os.getcwd()
-                os.chdir(user_metadata["downloads_folder"])
-                download(url, file, user_metadata["downloads_folder"])
-                os.chdir(c)
-
-            return handler
-
-        def button_click(node):
-            def handler():
-                async def send_async():
-                    to_email = index_metadata["form_email"]
-                    from_email = user_metadata["email"]
-                    utils.send_mail(to_email, user_metadata["name"], from_email, user_metadata["smtp_host"], user_metadata["password"], node["label"], node["id"])
-
-                loop.run_until_complete(send_async())
-
-            return handler
-
-        def goto_tab_section(file, section):
-            nonlocal container
-            # nonlocal sectionMap
-            def handler():
-                i = container.currentIndex()
-                label = container.tabText(i)
-                found_tab = False
-
-                while 1:
-                    if i < container.count():
-                        if label == file:
-                            found_tab = True
-                            break
-                        else:
-                            i += 1
-                            label = container.tabText(i)
-                    else:
-                        break
-
-                container.setCurrentIndex(i)
-
-                #container.currentWidget().layout().itemAt(0).widget().widget().layout().itemAt(0)
-                # container.currentWidget().layout().itemAt(0).widget().ensureWidgetVisible(container.currentWidget().layout().itemAt(0).widget().children()[1])
-                # print([file, sectionMap[section]])
-
-            return handler
-
-        for node in self.nodes:
-            if node["type"] == "source-file":
-                web = create_webview(self, self.box)
-                r = requests.get(url + "/" + node["file"])
-                file_text = r.text
-                html = render_code(node["lang"], file_text)
-                web.setHtml(html)
-                self.box.addWidget(web)
-            if node["type"] == "code":
-                web = create_webview(self, self.box)
-
-                exec(node["text"], globals(), {
-                    "nodes": self.nodes
-                 })
-                web.setHtml(exec_ret)
-                self.box.addWidget(web)
-            if node["type"] == "snippet":
-                web = create_webview(self, self.box)
-                html = render_code(node["lang"], node["text"])
-                web.setHtml(html)
-                self.box.addWidget(web)
-            if node["type"] == "html":
-                web = create_webview(self, self.box)
-                web.setUrl(QUrl(url + "/"  + node["url"]))
-                self.box.addWidget(web)
-            if node["type"] == "url":
-                web = create_webview(self, self.box)
-                web.setUrl(QUrl(node["url"]))
-                self.box.addWidget(web)
-            if node["type"] == "youtube":
-                web = create_webview(self, self.box)
-                web.setUrl(QUrl("https://www.youtube.com/watch?v=" + node["id"]))
-                self.box.addWidget(web)
-            if node["type"] == "image":
-                web = create_webview(self, self.box)
-                html = """<img src='""" + node["file"] + "'/>"
-                web.setHtml(html)
-                self.box.addWidget(web)
-            if node["type"] == "literate":
-                r = requests.get(url + "/" + node["file"])
-                root = r.text
-                lnodes = safe_load(root)["tangle"]
-
-                for key, lnode in lnodes.items():
-                    if lnode.get("from", None):
-                        r = requests.get(url + "/" + lnode["from"]["file"])
-                        root = r.text
-                        nodes_recurse = safe_load(root)["tangle"]
-
-                        lnodes[key]["text"] = nodes_recurse[key]["text"]
-
-                md_section = []
-                for key, lnode in lnodes.items():
-                    if lnode.get("doc", None):
-                        md_section.append(lnode["doc"])
-                    if lnode.get("text", None):
-                        md_section.append("```" + lnode.get("lang", "python") + "\n" + lnode["text"] + "\n" + "```")
-
-                html = render_md(md_section)
-                web = create_webview(self, self.box)
-                web.setMinimumHeight(node.get("height", 480))
-                web.setHtml(html)
-                button = QPushButton("Download Source")
-                button.released.connect(download_source(node["file"]))
-                self.box.addWidget(button)
-                self.box.addWidget(web)
-            if node["type"] == "md":
-                web = create_webview(self, self.box)
-                html = render_md(node["text"])
-                web.setHtml(html)
-                self.box.addWidget(web)
-            if node["type"] == "button":
-                button = QPushButton(node["button"]["label"])
-                button.released.connect(button_click(node["button"]))
-                self.box.addWidget(button)
-            if node["type"] == "link":
-                r = requests.get(url + "/" + node["link"]["file"])
-                root = r.text
-                nodes_recurse = safe_load(root)["nodes"]
-
-                has_more = False
-                for n in  nodes_recurse:
-                    if n["type"] == "transclusion" or n["type"] == "link" :
-                        has_more = True
-                        break
-                if has_more:
-                    nested_container = QTabWidget()
-                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
-                    nested_container._files = [node["link"]["file"]]
-                    container._files.append(node["link"]["file"])
-                    container.addTab(nested_container, node["link"]["file"])
-                    web.__link =  nested_container
-                    nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
-                    nested_container.setCurrentIndex(0)
-                else:
-                    web.__link =  Content(nodes_recurse, container=container)
-                    container.addTab(web.__link, node["link"]["file"])
-                    container._files.append(node["link"]["file"])
-            if node["type"] == "transclusion":
-                web = create_webview(self, self.box)
-
-                r = requests.get(url + "/" + node["transclusion"]["file"])
-                root = r.text
-                nodes_recurse = safe_load(root)["nodes"]
-
-
-                has_more = False
-                for n in  nodes_recurse:
-                    if n["type"] == "transclusion" or n["type"] == "link" :
-                        has_more = True
-                        break
-
-                transcluded_section = None
-                for n in  nodes_recurse:
-                    if n.get("section") == node["transclusion"]["section"]:
-                        transcluded_section = n
-
-                if transcluded_section:
-                    html = render_md([transcluded_section["text"], node["transclusion"]["comment"]])
-                    web.setHtml(html)
-                    self.box.addWidget(web)
-                    button = QPushButton("GOTO LINK")
-                    web.setMaximumHeight(transcluded_section.get("height", 480))
-                    button.released.connect(goto_tab_section(node["transclusion"]["file"], transcluded_section["section"]))
-                    self.box.addWidget(button)
-                    self.box.addWidget(web)
-                    # sectionMap[transcluded_section["section"]] = web
-                    button.setMaximumWidth(200)
-
-                if has_more:
-                    nested_container = QTabWidget()
-                    nested_container.tabBarClicked.connect(set_current_file(nested_container))
-                    nested_container._files = [node["transclusion"]["file"]]
-                    container._files.append(node["transclusion"]["file"])
-                    container.addTab(nested_container, node["transclusion"]["file"])
-                    web.__link =  nested_container
-                    nested_container.insertTab(0, Content(nodes_recurse, container=nested_container), "Content")
-                    nested_container.setCurrentIndex(0)
-                else:
-                    web.__link =  Content(nodes_recurse, container=container)
-                    container.addTab(web.__link, node["transclusion"]["file"])
-                    container._files.append(node["transclusion"]["file"])
-            if node["type"] == "text":
-                web = create_webview(self, self.box)
-                web.setHtml(node["text"])
-                self.box.addWidget(web)
-
-class Window(QMainWindow):
-
-    def createMenuBar(self):
-        global user_metadata
-        
-        def edit():
-            global current_file
-            global user_metadata
-            os.system(user_metadata["editor"] + " " + "server/" +  current_file + " &")
-
-        def refresh():
-            global url
-            global index_metadata
-            global user_metadata
-            global g
-            global set_current_file
-
-            r = requests.get(url + "/index.yaml")
-            index_metadata = safe_load(r.text)
-            with open("user_metadata.yaml", 'r') as reader:
-                user_metadata = safe_load(reader.read())
-            r = requests.get(url + "/" + index_metadata["root"])
-            root = r.text
-            nodes = safe_load(root)["nodes"]
-            tabs = QTabWidget()
-            tabs.tabBarClicked.connect(set_current_file(tabs))
-            tabs._files = [index_metadata["root"]]
-            self.tabs = tabs
-
-            self.index = Content(nodes, container=self.tabs)
-            tabs.insertTab(0, self.index, index_metadata["root"])
-            tabs.setCurrentIndex(0)
-            self.setCentralWidget(tabs)
-
-        menuBar = QMenuBar(self)
-        self.setMenuBar(menuBar)
-
-        debugMenu = QMenu("&Controls", self)
-        menuBar.addMenu(debugMenu)
-
-        self.refreshAction = QAction(self)
-        self.refreshAction.setText("&Refresh")
-        debugMenu.addAction(self.refreshAction)
-        self.refreshAction.triggered.connect(refresh)
-
-        self.editAction = QAction(self)
-        self.editAction.setText("&Edit")
-        debugMenu.addAction(self.editAction)
-        self.editAction.triggered.connect(edit)
-
-        def custom_action(cmd):
-            def handler():
-                os.system(cmd["script"] + " " + current_file + " " + url)
-
-            return handler
-
-        for elem in user_metadata["menu"]:
-            exec("""
-self.%sAction = QAction(self)
-self.%sAction.setText("&%s")
-debugMenu.addAction(self.%sAction)
-self.%sAction.triggered.connect(custom_action(%s))
-            """ % (
-                elem["name"], 
-                elem["name"],
-                elem["name"],
-                elem["name"],
-                elem["name"],
-                "elem"
-                )
-            , globals()
-            , {
-                "elem": elem,
-                "self": self,
-                "debugMenu": debugMenu,
-                "custom_action": custom_action
-              }
-            )
-
-
-        with open("user_metadata.yaml", 'r') as reader:
-            user_metadata = safe_load(reader.read())
-
-
-    def load_page(self):
-        url = self.web_address.text()
-        global index_metadata
-        global user_metadata
-        global g
-        global set_current_file
-
-        r = requests.get(url + "/" + "index.yaml")
-        index_metadata  = safe_load(r.text)
-
-        with open("user_metadata.yaml", 'r') as reader:
-            user_metadata = safe_load(reader.read())
-
-        r = requests.get(url + "/" + index_metadata["root"])
-        root = r.text
-        nodes = safe_load(root)["nodes"]
-
-        tabs = QTabWidget()
-        tabs.tabBarClicked.connect(set_current_file(tabs))
-        tabs._files = [index_metadata["root"]]
-        self.tabs = tabs
-
-        self.index = Content(nodes, container=self.tabs)
-        tabs.insertTab(0, self.index, index_metadata["root"])
-        tabs.setCurrentIndex(0)
-        self.setCentralWidget(tabs)
-
-
-    def __init__(self, parent=None):
-        global url
-        global index_metadata
-        global user_metadata
-        global g
-        global current_file
-        super().__init__(parent)
-
-        r = requests.get(url + "/index.yaml")
-        index_metadata = safe_load(r.text)
-
-        with open("user_metadata.yaml", 'r') as reader:
-            user_metadata = safe_load(reader.read())
-
-        r = requests.get(url + "/" + index_metadata["root"])
-        root = r.text
-        nodes = safe_load(root)["nodes"]
-
-        self.browser_toolbar = QToolBar()
-        self.addToolBar(self.browser_toolbar)
-        self.status = QStatusBar()
-        self.setStatusBar(self.status)
-        self.status.showMessage("Loaded")
-        self.web_address = QLineEdit()
-        self.web_address.returnPressed.connect(self.load_page)
-        self.browser_toolbar.addWidget(self.web_address)
-        self.web_address.setText(url)
-
-        self.setWindowTitle("Index")
-        self.setGeometry(g.x(), g.y(), g.width(), g.height())
-
-        tabs = QTabWidget()
-        # https://gist.github.com/espdev/4f1565b18497a42d317cdf2531b7ef05
-        # https://doc.qt.io/qt-5.12/style-reference.html
-        self.tabs = tabs
-        tabs.tabBarClicked.connect(set_current_file(tabs))
-        tabs._files = [index_metadata["root"]]
-        current_file = index_metadata["root"]
-        self.tabs = tabs
-
-        self.index = Content(nodes, container=tabs, file=index_metadata["root"])
-        tabs.insertTab(0, self.index, index_metadata["root"])
-        tabs.setCurrentIndex(0)
-        # self.setStyleSheet("background-color: whitesmoke;");
-        self.setCentralWidget(tabs)
-        self.createMenuBar()
-        self.show()
-
-def main():
-    global url
-    global index_metadata
-    global user_metadata
-    global g
-
-    app = QApplication(sys.argv)
-    g = QApplication.desktop().availableGeometry()
-    win = Window()
-    QApplication.setStyle(QStyleFactory.create('Cleanlooks'))
-    sys.exit(app.exec_())
-
-    # with open('downloads/test.py', 'w') as a_writer:
-    #    a_writer.write(r.text)
-
-    # os.system("python downloads/test.py")
-
-
-PORT = 8083
-DIRECTORY = url
-
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=DIRECTORY, **kwargs)
-
-
-def f(name):
-    server_class = http.server.HTTPServer
-    handler_class=Handler
-    server_address = ('', PORT)
-    httpd = server_class(server_address, handler_class)
-    httpd.serve_forever()
-
-
 if __name__ == '__main__':
     if url.startswith("http"):
         main()
@@ -1674,5 +1653,3 @@ if __name__ == '__main__':
         p.start()
         time.sleep(2)
         main()
-
-
