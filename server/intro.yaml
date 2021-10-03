@@ -36,10 +36,6 @@ nodes:
    link:
         file: cart_demo.yaml
 
- - type: "link"
-   link:
-        file: setup.yaml
-
  - type: "transclusion"
    transclusion:
         comment: ""
