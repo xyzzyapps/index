@@ -30,22 +30,22 @@ nodes:
 
      From discord,
 
-    - Search contents of all cached pages at once.
-    - Ctrl+F search all tabs at once
-    - Ctrl+F search backwards in history
-    - Bookmarks/favorites with tags and notes (notes are pages themselves with links and everything?)
-    - Special treatment of cache for favorited pages (e.g. Clear cache except favorited pages)
-    - "Versioned cache"/automatic archiving
-    - Read-later tree
-    - Visual search. Draw a picture, program renders all cached pages or goes backwards in history and compares.
-    - Button/input that generates word cloud of page (not useful, but vaguely interesting to look at).
-    - History of visited pages saved as a tree/graph rather than a line.
-    - "Window manager features" to layout tabs within the window. Picture-in-picture stuff?
-    - For the current page, show in UI:
-    - - Cache date
-    - - File(s)/resources size
-    - - Download speed while downloading
-    - First-class "wiki support" for all pages. e.g. inline comments, edit-suggestions, adding translations
+      - Search contents of all cached pages at once.
+      - Ctrl+F search all tabs at once
+      - Ctrl+F search backwards in history
+      - Bookmarks/favorites with tags and notes (notes are pages themselves with links and everything?)
+      - Special treatment of cache for favorited pages (e.g. Clear cache except favorited pages)
+      - "Versioned cache"/automatic archiving
+      - Read-later tree
+      - Visual search. Draw a picture, program renders all cached pages or goes backwards in history and compares.
+      - Button/input that generates word cloud of page (not useful, but vaguely interesting to look at).
+      - History of visited pages saved as a tree/graph rather than a line.
+      - "Window manager features" to layout tabs within the window. Picture-in-picture stuff?
+      - For the current page, show in UI:
+      - - Cache date
+      - - File(s)/resources size
+      - - Download speed while downloading
+      - First-class "wiki support" for all pages. e.g. inline comments, edit-suggestions, adding translations
 
      # More reinvention possibilities
 

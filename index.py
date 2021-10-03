@@ -210,7 +210,7 @@ self.%sAction.triggered.connect(custom_action(%s))
         self.web_address.setText(url)
 
         self.setWindowTitle("Index")
-        self.setGeometry(g.x(), g.y(), 1024, g.height())
+        self.setGeometry(g.x(), g.y(), 1152, g.height())
 
         tabs = QTabWidget()
         # https://gist.github.com/espdev/4f1565b18497a42d317cdf2531b7ef05
@@ -267,6 +267,7 @@ def create_webview(par, box):
     web.setSizeIncrement(QSizePolicy.Expanding, QSizePolicy.Expanding)
     web.setPage(CustomWebEnginePage(par, web, box))
     web.setMinimumWidth(960)
+    web.setMaximumHeight(640)
     return web
 
 class Content(QWidget):
@@ -366,6 +367,7 @@ class Content(QWidget):
         for node in self.nodes:
             if node["type"] == "source-file":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 r = requests.get(url + "/" + node["file"])
                 file_text = r.text
                 html = render_code(node["lang"], file_text)
@@ -373,6 +375,7 @@ class Content(QWidget):
                 self.box.addWidget(web)
             if node["type"] == "code":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
 
                 exec(node["text"], globals(), {
                     "nodes": self.nodes
@@ -381,25 +384,28 @@ class Content(QWidget):
                 self.box.addWidget(web)
             if node["type"] == "snippet":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 html = render_code(node["lang"], node["text"])
                 web.setHtml(html)
                 self.box.addWidget(web)
             if node["type"] == "html":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 web.setUrl(QUrl(url + "/"  + node["url"]))
                 self.box.addWidget(web)
             if node["type"] == "url":
                 web = create_webview(self, self.box)
                 web.setUrl(QUrl(node["url"]))
-                web.setMaximumHeight(node.get("height", 480))
+                web.setMaximumHeight(node.get("height", 640))
                 self.box.addWidget(web)
             if node["type"] == "youtube":
                 web = create_webview(self, self.box)
-                web.setUrl(QUrl("https://www.youtube.com/watch?v=" + node["id"]))
                 web.setMaximumHeight(node.get("height", 480))
+                web.setUrl(QUrl("https://www.youtube.com/watch?v=" + node["id"]))
                 self.box.addWidget(web)
             if node["type"] == "image":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 html = """<img src='""" + node["file"] + "'/>"
                 web.setHtml(html)
                 self.box.addWidget(web)
@@ -425,7 +431,7 @@ class Content(QWidget):
 
                 html = render_md(md_section)
                 web = create_webview(self, self.box)
-                web.setMinimumHeight(node.get("height", 480))
+                web.setMaximumHeight(node.get("height", 640))
                 web.setHtml(html)
                 button = QPushButton("Download Source")
                 button.setMaximumWidth(200)
@@ -435,6 +441,7 @@ class Content(QWidget):
                 self.box.addWidget(web)
             if node["type"] == "md":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 html = render_md(node["text"])
                 web.setHtml(html)
                 self.box.addWidget(web)
@@ -513,6 +520,7 @@ class Content(QWidget):
                     container._files.append(node["transclusion"]["file"])
             if node["type"] == "text":
                 web = create_webview(self, self.box)
+                web.setMaximumHeight(node.get("height", 640))
                 web.setHtml(node["text"])
                 self.box.addWidget(web)
 
